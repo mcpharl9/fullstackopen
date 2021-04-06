@@ -1,2 +1,3 @@
-# fullstackopen
-full stack open 2021
+# Fullstackopen
+Full Stack Open 2021
+
