@@ -2,7 +2,11 @@ import React, { useState, useEffect } from 'react'
 import axios from 'axios'
 import phoneService from './phone'
 
-
+const Button = ({handleClick, text}) => (
+  <button onClick={handleClick}>
+    {text}
+  </button>
+)
 const App = () => {
   
   useEffect(() => {
@@ -29,7 +33,6 @@ const App = () => {
 
   const [showAll, setShowAll] = useState('')
 
-  const [deleteName, setDeleteName] = useState('')
 
   const namesToShow = 
     persons.filter(person => person.name.toLowerCase().includes(showAll.toLowerCase()))
@@ -37,9 +40,26 @@ const App = () => {
   const addName = (event) => {
     event.preventDefault()
     if (persons.find(person => person.name === newName)) {
-      return (
-        window.alert(`${newName} is already added to phonebook`)
-      )
+        let ok = window.confirm(`${newName} is already added to phonebook, replace the old number with a new one?`)
+        if (ok === true) {
+          const nameObject = {
+            name: newName,
+            id: newName,
+            number: phoneNumbers
+          }
+       
+          axios.put('http://localhost:3001/persons/'+(newName), nameObject)
+          .then(response => {
+          console.log(response.data)
+          axios.get('http://localhost:3001/persons')
+          .then(response => {
+          console.log(response.data)
+          setPersons(response.data)
+          })
+          })
+       
+        }
+      
     }
     else {
       const nameObject = {
@@ -61,17 +81,25 @@ const App = () => {
       })
     }
   }
-  const deletePersonName = (event) => {
-    event.preventDefault()
-    if 
-        window.confirm('Delete {person.name}?')
-      )
+  const deletePersonName = (id, name) => {
+    
+    let x = window.confirm(`Delete ${name} ?`)
+    if (x === true) {
+      axios.delete('http://localhost:3001/persons/'+(id))
+      .then(response => {
+      console.log(response.data)
+      axios.get('http://localhost:3001/persons')
+      .then(response => {
+      console.log(response.data)
+      setPersons(response.data)
+      })
+      })
+      
     }
+    
   }
 
-  const handleNameDelete = (event) => {
-    setDeleteName(event.target.value)
-  }
+ 
   const handleNameAdd = (event) => {
     setNewName(event.target.value)
   }
@@ -110,14 +138,12 @@ const App = () => {
         </div>
       </form>
       <h2>Numbers</h2>
-      <form onSubmit={deletePersonName}>
-        <input value={persons.name}
-        onChange={handleNameDelete} />
+   
         <ul>
-          {namesToShow.map(person => <li key={person.id}>{person.name} {person.number} <button type="submit">delete</button></li>)}
+          {namesToShow.map(person => <li key={person.id}>{person.name} {person.number} <Button handleClick={() => {deletePersonName(person.id, person.name)}}  text="delete"/></li>)}
           
         </ul>
-      </form>
+      
       
       
     </div>
