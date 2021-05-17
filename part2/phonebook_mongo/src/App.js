@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import axios from 'axios'
 import phoneService from './phone'
 import './index.css'
 
@@ -9,6 +10,15 @@ const Button = ({handleClick, text}) => (
   </button>
 )
 const App = () => {
+  
+  useEffect(() => {
+    axios.get('http://localhost:3001/api/persons')
+    .then(response => {
+    console.log(response.data)
+    setPersons(response.data)
+    })
+   
+  }, [])
 
   useEffect(() => {
     phoneService
@@ -35,44 +45,51 @@ const App = () => {
     
   const addName = (event) => {
     event.preventDefault()
-    const nameObject = {
-      name: newName,
-      number: phoneNumbers
-    }
-
     if (persons.find(person => person.name === newName)) {
         let ok = window.confirm(`${newName} is already added to phonebook, replace the old number with a new one?`)
         if (ok === true) {
-          const nameObject = persons.find(person => person.name === newName)
-          nameObject.number = phoneNumbers
-          console.log(nameObject)
-          phoneService
-            .update(nameObject)
-            .then(response => {
-              console.log(response)
-              setNewName('')
-              setPhoneNumbers('')
-              setErrorMessage(
-                `${newName} updated on server`
-              )
-              setTimeout(() => {
-                setErrorMessage(null)
-              }, 5000)
-            })
-        }
-        phoneService
-        .getAll()
-        .then(response => {
+          const nameObject = {
+            name: newName,
+            id: newName,
+            number: phoneNumbers
+          }
+       
+          axios.put('http://localhost:3001/api/persons/'+(newName), nameObject)
+          .then(response => {
+          console.log(response.data)
+          axios.get('http://localhost:3001/api/persons')
+          .then(response => {
+          console.log(response.data)
           setPersons(response.data)
-        })
+          })
+          })
+          .catch(error => {
+            setNoteErrorMessage(
+              `${newName} has already been removed from server`
+            )
+            setTimeout(() => {
+              setNoteErrorMessage(null)
+            }, 5000)
+          })
+        }
     }
     else {
+      const nameObject = {
+        name: newName,
+        id: newName,
+        number: phoneNumbers
+      }
+      
+      setPersons(persons.concat(nameObject))
+      setPhoneNumbers(persons.concat(nameObject))
+      setNewName('')
+      setPhoneNumbers('')
+    
     phoneService
       .create(nameObject)
       .then(response => {
         setPersons(persons.concat(response.data))
         setNewName('')
-        setPhoneNumbers('')
         setErrorMessage(
           `${newName} added to server`
         )
@@ -80,39 +97,23 @@ const App = () => {
           setErrorMessage(null)
         }, 5000)
       })
-      .catch(error => console.log(error))
     }
-
-    phoneService
-    .getAll()
-    .then(response => {
-      setPersons(response.data)
-    })
   }
-
   const deletePersonName = (id, name) => {
     let x = window.confirm(`Delete ${name} ?`)
     if (x === true) {
-      phoneService
-      .deleteRec(id)
+      axios.delete('http://localhost:3001/api/persons/'+(id))
       .then(response => {
-        setErrorMessage(
-          `${newName} deleted from server`
-        )
-        setTimeout(() => {
-          setErrorMessage(null)
-        }, 5000)
-       })
-      .catch(error => {
-      setNoteErrorMessage(
-        `${newName} has already been removed from server`
-      )})
-    }
-    phoneService
-    .getAll()
-    .then(response => {
+      console.log(response.data)
+      axios.get('http://localhost:3001/api/persons')
+      .then(response => {
+      console.log(response.data)
       setPersons(response.data)
-    })
+      })
+      })
+
+    }
+    
   }
 
   const Notification = ({message}) => {
